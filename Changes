@@ -1,0 +1,9 @@
+Revision history for Perl extension Gtk2::Ex::VolumeButton.
+
+0.02  Thu Sept 9 13:30:10 2004
+	- Added support for stock-icons and pixbufs.
+
+0.01  Sun Aug  8 22:48:42 2004
+	- original version; created by h2xs 1.23 with options
+		-AXO -n Gtk2::Ex::VolumeButton
+
