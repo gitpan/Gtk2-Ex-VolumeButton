@@ -6,7 +6,7 @@ use Glib qw( TRUE FALSE );
 use Gtk2;
 use Gtk2::Gdk::Keysyms;
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 use Glib::Object::Subclass
 	Gtk2::ToggleButton::,
@@ -96,6 +96,7 @@ sub INIT_INSTANCE {
 
 	$self->{volume} = 0;
 	$self->{icon_size} = 'button';
+	$self->{position} = 'buttom';
 	
 	$self->signal_connect( 'toggled', \&toggle_cb );
 	$self->signal_connect( 'scroll_event', \&scroll_event_cb );
@@ -374,6 +375,7 @@ sub toggle_mute {
 1;
 
 __END__
+
 =head1 NAME
 
 Gtk2::Ex::VolumeButton - widget to control volume and similar values

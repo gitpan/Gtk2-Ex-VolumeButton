@@ -6,6 +6,7 @@ use Gtk2::Ex::VolumeButton;
 my $w = Gtk2::Window->new();
 my $b = Gtk2::VBox->new();
 my $v = Gtk2::Ex::VolumeButton->new(
+		mute_image		=> 'gtk-cancel',
 		zero_image		=> 'gtk-quit',
 		min_image		=> 'gtk-ok',
 		medium_image	=> 'gtk-quit',
