@@ -6,7 +6,7 @@ use Glib qw( TRUE FALSE );
 use Gtk2;
 use Gtk2::Gdk::Keysyms;
 
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 
 use Glib::Object::Subclass
 	Gtk2::ToggleButton::,
@@ -72,7 +72,9 @@ use Glib::Object::Subclass
 				'icon_size',
 				'Icon Size',
 				'Size of the icons',
-				'button',
+				0,
+				1000,
+				18,
 				[qw( readable writable )]
 		),
 		Glib::ParamSpec->string(
@@ -95,7 +97,7 @@ sub INIT_INSTANCE {
 	my $self = shift;
 
 	$self->{volume} = 0;
-	$self->{icon_size} = 'button';
+	$self->{icon_size} = 18;
 	$self->{position} = 'buttom';
 	
 	$self->signal_connect( 'toggled', \&toggle_cb );

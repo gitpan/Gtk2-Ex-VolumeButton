@@ -1,6 +1,9 @@
 Revision history for Perl extension Gtk2::Ex::VolumeButton.
 
-0.06  Sat Dez 18 21:46:10 2004
+0.07  Sat Dec 18 21:56:17 2004
+	- Fixed grave bug which caused a fatal error when loading the module.
+
+0.06  Sat Dec 18 21:46:10 2004
 	- icon_size is now an integer value.
 	- Passing paths of images to display works better now.
 
