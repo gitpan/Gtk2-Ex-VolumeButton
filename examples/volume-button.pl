@@ -12,7 +12,7 @@ my $v = Gtk2::Ex::VolumeButton->new(
 		max_image		=> 'gtk-ok'
 );
 
-$b->pack_start($v, 0, 0, 0);
+$b->pack_start($v, 1, 1, 0);
 $w->add($b);
 $w->show_all();
 

@@ -6,15 +6,20 @@ use Glib qw( TRUE FALSE );
 use Gtk2;
 use Gtk2::Gdk::Keysyms;
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 use Glib::Object::Subclass
 	Gtk2::ToggleButton::,
 	signals => {
 		volume_changed => {
-			flags			=> [qw( run-last )],
-			return_type		=> undef,
-			param_types		=> [qw( Glib::Int  )]
+			flags		=> [qw( run-last )],
+			return_type	=> undef,
+			param_types	=> [qw( Glib::Int  )]
+		},
+		mute_changed => {
+			flags		=> [qw( run-last )],
+			return_type	=> undef,
+			param_types	=> [qw( Glib::Boolean )]
 		},
 		show => \&on_show
 	},
@@ -26,6 +31,13 @@ use Glib::Object::Subclass
 				0,
 				100,
 				50,
+				[qw( readable writable )]
+		),
+		Glib::ParamSpec->string(
+				'mute_image',
+				'Mute Image',
+				'Image to display when the volume is muted',
+				'',
 				[qw( readable writable )]
 		),
 		Glib::ParamSpec->string(
@@ -55,6 +67,27 @@ use Glib::Object::Subclass
 				'Image to display when the volume is maximal',
 				'',
 				[qw( readable writable )]
+		),
+		Glib::ParamSpec->string(
+				'icon_size',
+				'Icon Size',
+				'Size of the icons',
+				'button',
+				[qw( readable writable )]
+		),
+		Glib::ParamSpec->string(
+				'position',
+				'Position',
+				'Position of the popup window',
+				'bottom',
+				[qw( readable writable )]
+		),
+		Glib::ParamSpec->boolean(
+				'muted',
+				'Muted',
+				'Is the volume muted?',
+				0,
+				[qw( readable writable )]
 		)
 	];
 
@@ -62,24 +95,33 @@ sub INIT_INSTANCE {
 	my $self = shift;
 
 	$self->{volume} = 0;
+	$self->{icon_size} = 'button';
 	
 	$self->signal_connect( 'toggled', \&toggle_cb );
 	$self->signal_connect( 'scroll_event', \&scroll_event_cb );
-	
-#	if( -r $self->{min_image} ) {
-#		$self->{image} = Gtk2::Image->new_from_file( $self->{min_image} );
-#	} elsif( ref $self->{min_image} eq 'Gtk2::Gdk::Pixbuf' ) {
-#		$self->{image} = Gtk2::Image->new_from_pixbuf( $self->{min_image} );
-#	} else {
-#		$self->{image} = Gtk2::Image->new_from_stock( $self->{min_image} );
-#	}
+
 	$self->{image} = Gtk2::Image->new();
 	$self->{image}->show();
 	$self->add( $self->{image} );
 }
 
+sub update_pixbufs {
+	my $self = shift;
+
+	for(qw( mute zero min medium max )) {
+		if( $self->{$_.'_image'}->isa('Gtk2::Gdk::Pixbuf') ) {
+			$self->{pixbufs}->{$_} = $self->{$_.'_image'};
+		} elsif( -r $self->{$_.'_image'} ) {
+			$self->{pixbufs}->{$_} = Gtk2::Gdk::Poxbuf->new_from_file( $self->{$_.'_image'} );
+		} elsif($_) {
+			$self->{pixbufs}->{$_} = $self->render_icon( $self->{$_.'_image'}, $self->{icon_size} );
+		}
+	}
+}
+
 sub on_show {
 	my $self = shift;
+	$self->update_pixbufs();
 	$self->update_image( $self->{volume} );
 	$self->signal_chain_from_overridden();
 }
@@ -183,18 +225,23 @@ sub show_scale {
 
 	my $req = $self->{popup}->size_request();
 	my($x, $y) = $self->window->get_origin();
-	my $alloc = $self->get_parent->allocation();
+	my $alloc = $self->allocation();
 
 	$req->width( _MAX($req->width, $alloc->width) );
 
+	$self->{scale}->set_size_request( -1, 100 );
+	$self->{popup}->set_size_request( $req->width, -1 );
+
 	$x += $alloc->x;
-	$y += $alloc->y + $alloc->height;
+
+	if( $self->{position} eq 'bottom' ) {
+		$y += $alloc->y + $alloc->height;
+	} else {
+		$y -= ($self->{popup}->get_size())[1];
+	}
 
 	$x = _MAX( 0, $x );
 	$y = _MAX( 0, $y );
-
-	$self->{scale}->set_size_request( -1, 100 );
-	$self->{popup}->set_size_request( $req->width, -1 );
 
 	$self->{popup}->move($x, $y);
 	$self->{popup}->show();
@@ -282,6 +329,8 @@ sub update_image {
 	my($self, $vol) = @_;
 	my $id;
 	
+	$vol = $self->{volume} unless defined $vol;
+
 	if( $vol <= 0 ) {
 		$id = 'zero';
 	} elsif( $vol <= 100 / 3 ) {
@@ -292,13 +341,34 @@ sub update_image {
 		$id = 'max';
 	}
 
-	if( ref $self->{$id.'_image'} eq 'Gtk2::Gdk::Pixbuf' ) {
-		$self->{image}->set_from_pixbuf( $self->{$id.'_image'} );
-	} elsif( -r $self->{$id.'_image'} ) {
-		$self->{image}->set_from_file( $self->{$id.'_image'} );
-	} else {
-		$self->{image}->set_from_stock( $self->{$id.'_image'}, 'button' );
+	my $pixbuf = $self->{pixbufs}->{$id}->copy();
+
+	if( $self->{muted} ) {
+		$self->{pixbufs}->{mute}->composite(
+				$pixbuf,
+				0,
+				0,
+				$self->{pixbufs}->{mute}->get_width(),
+				$self->{pixbufs}->{mute}->get_height(),
+				0,
+				0,
+				1.0,
+				1.0,
+				'bilinear',
+				255
+		);
 	}
+
+	$self->{image}->set_from_pixbuf( $pixbuf );
+}
+
+sub toggle_mute {
+	my $self = shift;
+
+	$self->{muted} = ($self->{muted}) ? 0 : 1;
+	$self->signal_emit( 'mute_changed', $self->{muted} );
+
+	$self->update_image();
 }
 
 1;
@@ -340,15 +410,22 @@ rhythmbox. Much code is stolen from the muine volume-button widget.
 
   my $vb = Gtk2::Ex::VolumeButton->new(
       volume       => 20,
+      mute_image   => 'mute.png',
       zero_image   => 'zero.png',
       min_image    => 'min.png',
       medium_image => 'medium.png',
-      max_image	   => 'max.png'
+      max_image	   => 'max.png',
+      icon_size    => 'button',
+      position     => 'top',
+      muted        => 1
   );
   $vb->show();
 
   $vb->signal_connect( volume_changed =>
       sub { print 'volume changed: ', $vb->{volume}, "\n" } );
+
+  $vb->signal_connect( mute_changed =>
+      sub { print $_[1] ? 'muted : 'unmuted', "\n" } );
 
   ...
 
@@ -361,6 +438,10 @@ rhythmbox. Much code is stolen from the muine volume-button widget.
 =item 'volume' (int : readable / writable)
 
 Current volume
+
+=item 'mute_image' (string : readable / writable)
+
+Image to lay over the current image when the volume is muted
 
 =item 'zero_image' (string : readable / writable)
 
@@ -378,6 +459,16 @@ Image to display when the volume is medium
 
 Image to display when the volume is maximal
 
+=item 'position' (string : readable / writable)
+
+Position of the popup window relativ to the button
+
+'top' and 'buttom' are supported
+
+=item 'muted' (boolean : readable / writable)
+
+Is the volume muted?
+
 =back
 
 =head1 SIGNALS
@@ -387,6 +478,10 @@ Image to display when the volume is maximal
 =item 'volume_changed'
 
 Emitted when the volume property is changed
+
+=item 'mute_changed'
+
+Emitted when the mute status is changed
 
 =back
 

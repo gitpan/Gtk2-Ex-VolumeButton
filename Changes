@@ -1,6 +1,9 @@
 Revision history for Perl extension Gtk2::Ex::VolumeButton.
 
-0.02  Thu Sept 9 13:30:10 2004
+0.03  Thu Sep 10 09:13:34 2004
+	- Added mute_image, mute property and mute_changed signal.
+
+0.02  Thu Sep  9 13:30:10 2004
 	- Added support for stock-icons and pixbufs.
 
 0.01  Sun Aug  8 22:48:42 2004
