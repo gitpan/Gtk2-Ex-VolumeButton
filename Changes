@@ -1,5 +1,8 @@
 Revision history for Perl extension Gtk2::Ex::VolumeButton.
 
+0.04  Thu Sep 10 15:01:15 2004
+	- Removed wrong 'use 5.008004;' in Makefile.PL.
+
 0.03  Thu Sep 10 09:13:34 2004
 	- Added mute_image, mute property and mute_changed signal.
 

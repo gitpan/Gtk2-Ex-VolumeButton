@@ -6,7 +6,7 @@ use Glib qw( TRUE FALSE );
 use Gtk2;
 use Gtk2::Gdk::Keysyms;
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 use Glib::Object::Subclass
 	Gtk2::ToggleButton::,
