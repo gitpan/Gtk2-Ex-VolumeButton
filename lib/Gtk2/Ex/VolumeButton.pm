@@ -6,7 +6,7 @@ use Glib qw( TRUE FALSE );
 use Gtk2;
 use Gtk2::Gdk::Keysyms;
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 use Glib::Object::Subclass
 	Gtk2::ToggleButton::,
@@ -68,7 +68,7 @@ use Glib::Object::Subclass
 				'',
 				[qw( readable writable )]
 		),
-		Glib::ParamSpec->string(
+		Glib::ParamSpec->int(
 				'icon_size',
 				'Icon Size',
 				'Size of the icons',
@@ -110,10 +110,10 @@ sub update_pixbufs {
 	my $self = shift;
 
 	for(qw( mute zero min medium max )) {
-		if( $self->{$_.'_image'}->isa('Gtk2::Gdk::Pixbuf') ) {
+		if( ref $self->{$_.'_image'} && $self->{$_.'_image'}->isa('Gtk2::Gdk::Pixbuf') ) {
 			$self->{pixbufs}->{$_} = $self->{$_.'_image'};
 		} elsif( -r $self->{$_.'_image'} ) {
-			$self->{pixbufs}->{$_} = Gtk2::Gdk::Poxbuf->new_from_file( $self->{$_.'_image'} );
+			$self->{pixbufs}->{$_} = Gtk2::Gdk::Pixbuf->new_from_file_at_size( $self->{$_.'_image'}, $self->{icon_size}, $self->{icon_size} );
 		} elsif($_) {
 			$self->{pixbufs}->{$_} = $self->render_icon( $self->{$_.'_image'}, $self->{icon_size} );
 		}
@@ -417,7 +417,7 @@ rhythmbox. Much code is stolen from the muine volume-button widget.
       min_image    => 'min.png',
       medium_image => 'medium.png',
       max_image	   => 'max.png',
-      icon_size    => 'button',
+      icon_size    => 20,
       position     => 'top',
       muted        => 1
   );
